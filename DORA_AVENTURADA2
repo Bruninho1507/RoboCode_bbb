@@ -1,0 +1,78 @@
+package KIDVARINHA2;
+import robocode.*;
+import java.awt.Color;
+
+public class DORA_AVENTURADA_2 extends AdvancedRobot {
+
+    boolean movingForward = true;
+
+    public void run() {
+        setColors(Color.pink, Color.blue, Color.white);
+
+        // Deixar o robo independênte do radar e arma
+        setAdjustRadarForGunTurn(true);
+        setAdjustGunForRobotTurn(true);
+
+        // fareja infinito
+        setTurnRadarRight(Double.POSITIVE_INFINITY);
+
+        while (true) {
+            // Movimento contínuo
+            if (movingForward) {
+                setAhead(150);
+            } else {
+                setBack(150);
+            }
+            execute();
+        }
+    }
+
+    public void onScannedRobot(ScannedRobotEvent e) {
+        // Manter radar travado no inimigo
+        double radarTurn = getHeading() + e.getBearing() - getRadarHeading();
+        setTurnRadarRight(radarTurn * 2);
+
+        // Calcular direção do inimigo
+        double absoluteBearing = getHeading() + e.getBearing();
+
+        // Mira da arma
+        double gunTurn = absoluteBearing - getGunHeading();
+        setTurnGunRight(normalizeBearing(gunTurn));
+
+        // Potência do tiro baseada na distância
+        double distance = e.getDistance();
+        double firePower = Math.min(3, Math.max(1, 400 / distance));
+
+        if (getGunHeat() == 0) {
+            fire(firePower);
+        }
+
+        // Movimento evasivo
+        if (distance < 150) {
+            setBack(100);
+        } else {
+            setAhead(100);
+        }
+    }
+
+    public void onHitByBullet(HitByBulletEvent e) {
+        // Movimento aleatório ao ser atingido
+        movingForward = !movingForward;
+        setTurnRight(45);
+        setAhead(100);
+    }
+
+    public void onHitWall(HitWallEvent e) {
+        // Evitar ficar preso na parede
+        movingForward = !movingForward;
+        setBack(100);
+        setTurnRight(90);
+    }
+
+    // Função para normalizar ângulo
+    public double normalizeBearing(double angle) {
+        while (angle > 180) angle -= 360;
+        while (angle < -180) angle += 360;
+        return angle;
+    }
+}
